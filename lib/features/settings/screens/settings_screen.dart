@@ -287,60 +287,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        insetPadding:
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           side: BorderSide(color: cs.outline),
         ),
         backgroundColor: cs.surfaceContainer,
         title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome_rounded, color: cs.primary, size: 22),
+            Icon(Icons.auto_awesome_rounded,
+                color: cs.primary, size: 22),
             const SizedBox(width: 10),
-            const Text('Generate Mock Data'),
+            const Flexible(
+                child: Text('Generate Mock Data',
+                    overflow: TextOverflow.ellipsis)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'This will delete all your existing collections and flashcards, '
-              'then populate the app with sample data including:',
-              style: TextStyle(
-                  color: cs.onSurface,
-                  fontSize: 14,
-                  height: 1.5),
-            ),
-            const SizedBox(height: 12),
-            _bulletItem(context, 'Vocabulary Essentials (5 cards)'),
-            _bulletItem(context, 'Neuroanatomy Fundamentals (3 cards)'),
-            _bulletItem(context, 'Spanish Basics (4 cards)'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: cs.errorContainer,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This will delete all your existing collections and flashcards, '
+                'then populate the app with sample data including:',
+                style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 14,
+                    height: 1.5),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_rounded,
-                      size: 16, color: cs.onErrorContainer),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'All existing data will be permanently deleted.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: cs.onErrorContainer,
-                        fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+              _bulletItem(context, 'Vocabulary Essentials (5 cards)'),
+              _bulletItem(
+                  context, 'Neuroanatomy Fundamentals (3 cards)'),
+              _bulletItem(context, 'Spanish Basics (4 cards)'),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: cs.errorContainer,
+                  borderRadius:
+                      BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_rounded,
+                        size: 16, color: cs.onErrorContainer),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'All existing data will be permanently deleted.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onErrorContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -353,7 +363,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               generateMockData(ref);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('✓ Mock data generated successfully'),
+                  content:
+                      Text('✓ Mock data generated successfully'),
                   duration: Duration(seconds: 2),
                 ),
               );

@@ -12,7 +12,7 @@ import '../../../shared/widgets/page_header.dart';
 
 class AddEditFlashcardScreen extends ConsumerStatefulWidget {
   final String collectionId;
-  final String? cardId; // null = add mode
+  final String? cardId;
 
   const AddEditFlashcardScreen({
     super.key,
@@ -51,10 +51,13 @@ class _AddEditFlashcardScreenState
       if (card != null) {
         _titleController.text = card.title;
         _contentController.text = card.content;
+        setState(() {});
       }
     });
-    _titleController.addListener(() => setState(() => _isDirty = true));
-    _contentController.addListener(() => setState(() => _isDirty = true));
+    _titleController
+        .addListener(() => setState(() => _isDirty = true));
+    _contentController
+        .addListener(() => setState(() => _isDirty = true));
   }
 
   @override
@@ -67,20 +70,20 @@ class _AddEditFlashcardScreenState
   void _save() {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
-
     final content = _contentController.text.trim();
 
     if (_isEdit && _existingCard != null) {
-      final updated = _existingCard!.copyWith(title: title, content: content);
-      ref.read(flashcardsProvider.notifier).update(updated);
+      ref.read(flashcardsProvider.notifier).update(
+            _existingCard!.copyWith(title: title, content: content),
+          );
     } else {
       ref.read(flashcardsProvider.notifier).add(
-        Flashcard(
-          collectionId: widget.collectionId,
-          title: title,
-          content: content,
-        ),
-      );
+            Flashcard(
+              collectionId: widget.collectionId,
+              title: title,
+              content: content,
+            ),
+          );
     }
     context.pop();
   }
@@ -104,7 +107,8 @@ class _AddEditFlashcardScreenState
                 context.pop();
               },
               style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
+                backgroundColor:
+                    Theme.of(context).colorScheme.error,
               ),
               child: const Text('Discard'),
             ),
@@ -121,7 +125,6 @@ class _AddEditFlashcardScreenState
     final cs = Theme.of(context).colorScheme;
     final charCount = _contentController.text.length;
 
-    // Find the collection title for the header label
     final collection = ref
         .watch(collectionsProvider)
         .where((c) => c.id == widget.collectionId)
@@ -153,10 +156,11 @@ class _AddEditFlashcardScreenState
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.lg),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
-                        // ── CARD FRONT ─────────────────────────
-                        _sectionLabel(context, 'CARD FRONT (TITLE)', right: null),
+                        // ── CARD FRONT ────────────────────────
+                        _Label('CARD FRONT (TITLE)'),
                         const SizedBox(height: AppSpacing.sm),
                         TextField(
                           controller: _titleController,
@@ -164,94 +168,112 @@ class _AddEditFlashcardScreenState
                               TextCapitalization.sentences,
                           style: TextStyle(color: cs.onSurface),
                           decoration: InputDecoration(
-                            hintText: 'Enter the core term or question',
-                            hintStyle:
-                                TextStyle(color: cs.onSurfaceVariant),
+                            hintText:
+                                'Enter the core term or question',
+                            hintStyle: TextStyle(
+                                color: cs.onSurfaceVariant),
                           ),
                         ),
 
                         const SizedBox(height: AppSpacing.xl),
 
-                        // ── CARD BACK ───────────────────────────
-                        _sectionLabel(
-                          context,
-                          'CARD BACK (EXPLANATION)',
-                          trailing: _FormatToolbar(
-                            controller: _contentController,
-                            onChanged: () => setState(() {}),
-                            previewMode: _previewMode,
-                            onTogglePreview: () => setState(
-                                () => _previewMode = !_previewMode),
-                          ),
+                        // ── CARD BACK label ───────────────────
+                        _Label('CARD BACK (EXPLANATION)'),
+                        const SizedBox(height: AppSpacing.sm),
+
+                        // ── Format toolbar — OWN ROW ──────────
+                        _FormatToolbar(
+                          controller: _contentController,
+                          onChanged: () => setState(() {}),
+                          previewMode: _previewMode,
+                          onTogglePreview: () => setState(
+                              () => _previewMode = !_previewMode),
                         ),
                         const SizedBox(height: AppSpacing.sm),
 
-                        Container(
-                          constraints:
-                              const BoxConstraints(minHeight: 200),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainer,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.md),
-                            border: Border.all(color: cs.outline),
-                          ),
-                          child: _previewMode
-                              ? Padding(
-                                  padding:
-                                      const EdgeInsets.all(AppSpacing.lg),
-                                  child:
-                                      _contentController.text.isEmpty
-                                          ? Text(
-                                              'Nothing to preview yet...',
-                                              style: TextStyle(
-                                                color: cs.onSurfaceVariant,
-                                                fontStyle:
-                                                    FontStyle.italic,
-                                              ),
-                                            )
-                                          : MarkdownBody(
-                                              data:
-                                                  _contentController.text,
-                                              styleSheet:
-                                                  MarkdownStyleSheet
-                                                      .fromTheme(
-                                                          Theme.of(context))
-                                                      .copyWith(
-                                                p: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium
-                                                    ?.copyWith(
-                                                      color: cs.onSurface,
-                                                    ),
-                                              ),
-                                            ),
-                                )
-                              : TextField(
-                                  controller: _contentController,
-                                  maxLines: null,
-                                  minLines: 8,
-                                  style: TextStyle(color: cs.onSurface),
-                                  decoration: InputDecoration(
-                                    hintText:
-                                        'Explain using Markdown — **bold**, *italic*, `code`, lists...',
-                                    hintStyle: TextStyle(
-                                        color: cs.onSurfaceVariant),
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    contentPadding: const EdgeInsets.all(
+                        // ── Editor / Preview ──────────────────
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              AppRadius.md),
+                          child: Container(
+                            constraints: const BoxConstraints(
+                                minHeight: 280),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainer,
+                              borderRadius: BorderRadius.circular(
+                                  AppRadius.md),
+                              border: Border.all(
+                                  color: cs.outline),
+                            ),
+                            child: _previewMode
+                                ? Padding(
+                                    padding: const EdgeInsets.all(
                                         AppSpacing.lg),
+                                    child: _contentController
+                                            .text.isEmpty
+                                        ? Text(
+                                            'Nothing to preview yet...',
+                                            style: TextStyle(
+                                              color:
+                                                  cs.onSurfaceVariant,
+                                              fontStyle:
+                                                  FontStyle.italic,
+                                            ),
+                                          )
+                                        : MarkdownBody(
+                                            data: _contentController
+                                                .text,
+                                            styleSheet:
+                                                MarkdownStyleSheet
+                                                    .fromTheme(
+                                                        Theme.of(
+                                                            context))
+                                                    .copyWith(
+                                              p: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color:
+                                                        cs.onSurface,
+                                                  ),
+                                            ),
+                                          ),
+                                  )
+                                : TextField(
+                                    controller:
+                                        _contentController,
+                                    maxLines: null,
+                                    minLines: 12,
+                                    style: TextStyle(
+                                        color: cs.onSurface),
+                                    decoration: InputDecoration(
+                                      hintText:
+                                          'Explain using Markdown — **bold**, *italic*, `code`, lists...',
+                                      hintStyle: TextStyle(
+                                          color:
+                                              cs.onSurfaceVariant),
+                                      border: InputBorder.none,
+                                      enabledBorder:
+                                          InputBorder.none,
+                                      focusedBorder:
+                                          InputBorder.none,
+                                      contentPadding:
+                                          const EdgeInsets.all(
+                                              AppSpacing.lg),
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
 
                         const SizedBox(height: AppSpacing.sm),
+                        // Char count + markdown hint
                         Row(
                           children: [
                             Icon(
                               Icons.info_outline_rounded,
                               size: 12,
-                              color: cs.primary.withValues(alpha: 0.7),
+                              color: cs.primary
+                                  .withValues(alpha: 0.7),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -260,7 +282,8 @@ class _AddEditFlashcardScreenState
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.4,
-                                color: cs.primary.withValues(alpha: 0.7),
+                                color: cs.primary
+                                    .withValues(alpha: 0.7),
                               ),
                             ),
                             const Spacer(),
@@ -280,7 +303,7 @@ class _AddEditFlashcardScreenState
             ),
           ),
 
-          // ── Fixed bottom action bar ─────────────────────
+          // ── Fixed bottom action bar — ONE ROW ──────────
           _ActionBar(
             onSave: _save,
             onDiscard: _discard,
@@ -291,31 +314,32 @@ class _AddEditFlashcardScreenState
       ),
     );
   }
+}
 
-  Widget _sectionLabel(BuildContext context, String label,
-      {String? right, Widget? trailing}) {
+// ─────────────────────────────────────────────
+// Section label
+// ─────────────────────────────────────────────
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.8,
-            color: cs.onSurfaceVariant,
-          ),
-        ),
-        const Spacer(),
-        if (right case final r?) Text(r, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
-        if (trailing case final t?) t,
-      ],
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+        color: cs.onSurfaceVariant,
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Markdown format toolbar
+// Format toolbar — own row, no eye icon
 // ─────────────────────────────────────────────
 class _FormatToolbar extends StatelessWidget {
   final TextEditingController controller;
@@ -343,7 +367,8 @@ class _FormatToolbar extends StatelessWidget {
     controller.value = controller.value.copyWith(
       text: newText,
       selection: TextSelection.collapsed(
-          offset: sel.start + prefix.length + selected.length),
+          offset:
+              sel.start + prefix.length + selected.length),
     );
     onChanged();
   }
@@ -352,37 +377,61 @@ class _FormatToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    Widget btn(IconData icon, VoidCallback onTap, {bool active = false}) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 28,
-          height: 28,
-          margin: const EdgeInsets.only(left: 4),
-          decoration: BoxDecoration(
-            color: active
-                ? cs.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+    Widget btn(IconData icon, VoidCallback onTap,
+        {bool active = false, String? tooltip}) {
+      return Tooltip(
+        message: tooltip ?? '',
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.only(right: 6),
+            decoration: BoxDecoration(
+              color: active
+                  ? cs.primary.withValues(alpha: 0.12)
+                  : cs.surfaceContainerHigh,
+              borderRadius:
+                  BorderRadius.circular(AppRadius.sm),
+              border: Border.all(
+                color: active
+                    ? cs.primary.withValues(alpha: 0.4)
+                    : cs.outline,
+              ),
+            ),
+            child: Icon(icon,
+                size: 16,
+                color: active ? cs.primary : cs.onSurface),
           ),
-          child: Icon(icon,
-              size: 14,
-              color: active ? cs.primary : cs.onSurfaceVariant),
         ),
       );
     }
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
-        btn(Icons.format_bold_rounded, () => _insert('**', '**')),
-        btn(Icons.format_italic_rounded, () => _insert('*', '*')),
-        btn(Icons.format_list_bulleted_rounded, () => _insert('\n- ', '')),
-        btn(Icons.code_rounded, () => _insert('`', '`')),
+        btn(Icons.format_bold_rounded,
+            () => _insert('**', '**'),
+            tooltip: 'Bold'),
+        btn(Icons.format_italic_rounded,
+            () => _insert('*', '*'),
+            tooltip: 'Italic'),
+        btn(Icons.format_list_bulleted_rounded,
+            () => _insert('\n- ', ''),
+            tooltip: 'Bullet list'),
+        btn(Icons.code_rounded, () => _insert('`', '`'),
+            tooltip: 'Inline code'),
+        btn(Icons.format_quote_rounded,
+            () => _insert('\n> ', ''),
+            tooltip: 'Blockquote'),
+        const Spacer(),
+        // Preview toggle (separate from format btns, right-aligned)
         btn(
-          previewMode ? Icons.edit_rounded : Icons.visibility_outlined,
+          previewMode
+              ? Icons.edit_rounded
+              : Icons.visibility_outlined,
           onTogglePreview,
           active: previewMode,
+          tooltip: previewMode ? 'Edit' : 'Preview',
         ),
       ],
     );
@@ -390,7 +439,7 @@ class _FormatToolbar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Bottom action bar (fixed, not bottomSheet)
+// Bottom action bar — ONE ROW: SAVE + DISCARD
 // ─────────────────────────────────────────────
 class _ActionBar extends StatelessWidget {
   final VoidCallback onSave;
@@ -411,7 +460,8 @@ class _ActionBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(top: BorderSide(color: cs.outline, width: 0.5)),
+        border: Border(
+            top: BorderSide(color: cs.outline, width: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -419,23 +469,25 @@ class _ActionBar extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.md + MediaQuery.of(context).padding.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          AppButton(
-            label: isEdit ? 'SAVE CHANGES' : 'SAVE FLASHCARD',
-            type: AppButtonType.primary,
-            fullWidth: true,
-            height: 52,
-            onPressed: canSave ? onSave : null,
+          Expanded(
+            child: AppButton(
+              label: 'DISCARD',
+              type: AppButtonType.outline,
+              height: 52,
+              onPressed: onDiscard,
+            ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          AppButton(
-            label: 'DISCARD',
-            type: AppButtonType.ghost,
-            fullWidth: true,
-            height: 40,
-            onPressed: onDiscard,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            flex: 2,
+            child: AppButton(
+              label: isEdit ? 'SAVE' : 'SAVE',
+              type: AppButtonType.primary,
+              height: 52,
+              onPressed: canSave ? onSave : null,
+            ),
           ),
         ],
       ),

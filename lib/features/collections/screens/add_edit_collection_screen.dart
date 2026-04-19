@@ -320,99 +320,133 @@ class _AddEditCollectionScreenState
 
                   const SizedBox(height: AppSpacing.xl),
 
-                  // ── Color picker ───────────────────────
+                  // ── Color picker ──────────────────────────
                   _Section(
                     label: 'ACCENT COLOR',
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _kColors.map((color) {
-                        final selected =
-                            color.toARGB32() == _selectedColorValue;
-                        return GestureDetector(
-                          onTap: () => setState(
-                              () => _selectedColorValue =
-                                  color.toARGB32()),
-                          child: AnimatedContainer(
-                            duration:
-                                const Duration(milliseconds: 200),
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: selected
-                                  ? Border.all(
-                                      color: cs.onSurface,
-                                      width: 2.5)
-                                  : Border.all(
-                                      color: Colors.transparent,
-                                      width: 2.5),
-                              boxShadow: selected
-                                  ? [
-                                      BoxShadow(
-                                        color: color.withValues(
-                                            alpha: 0.5),
-                                        blurRadius: 8,
-                                        offset:
-                                            const Offset(0, 2),
-                                      )
-                                    ]
+                    hint: 'Swipe to see more',
+                    child: SizedBox(
+                      height: 44,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _kColors.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 10),
+                        itemBuilder: (ctx, index) {
+                          final color = _kColors[index];
+                          final selected =
+                              color.toARGB32() ==
+                                  _selectedColorValue;
+                          return GestureDetector(
+                            onTap: () => setState(() =>
+                                _selectedColorValue =
+                                    color.toARGB32()),
+                            child: AnimatedContainer(
+                              duration:
+                                  const Duration(milliseconds: 200),
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: selected
+                                    ? Border.all(
+                                        color: cs.onSurface,
+                                        width: 2.5)
+                                    : Border.all(
+                                        color: Colors.transparent,
+                                        width: 2.5),
+                                boxShadow: selected
+                                    ? [
+                                        BoxShadow(
+                                          color: color.withValues(
+                                              alpha: 0.5),
+                                          blurRadius: 8,
+                                          offset:
+                                              const Offset(0, 2),
+                                        )
+                                      ]
+                                    : null,
+                              ),
+                              child: selected
+                                  ? const Icon(
+                                      Icons.check_rounded,
+                                      color: Colors.white,
+                                      size: 18)
                                   : null,
                             ),
-                            child: selected
-                                ? const Icon(Icons.check_rounded,
-                                    color: Colors.white, size: 18)
-                                : null,
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        },
+                      ),
                     ),
                   ),
 
                   const SizedBox(height: AppSpacing.xl),
 
-                  // ── Icon picker ────────────────────────
+                  // ── Icon picker — 5-col GridView, 3 rows visible ──
                   _Section(
                     label: 'ICON',
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _kIcons.map((icon) {
-                        final selected =
-                            icon.codePoint ==
-                                _selectedIconCodePoint;
-                        return GestureDetector(
-                          onTap: () => setState(
-                              () => _selectedIconCodePoint =
-                                  icon.codePoint),
-                          child: AnimatedContainer(
-                            duration:
-                                const Duration(milliseconds: 150),
-                            width: 52,
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? accentColor
-                                  : cs.surfaceContainerHigh,
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.md),
-                              border: Border.all(
-                                color: selected
-                                    ? accentColor
-                                    : cs.outline,
-                              ),
-                            ),
-                            child: Icon(
-                              icon,
-                              size: 22,
-                              color: selected
-                                  ? Colors.white
-                                  : cs.onSurfaceVariant,
-                            ),
+                    hint: 'Scroll to see more icons',
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md),
+                      child: Container(
+                        height: 3 * 58 + 2 * 8 + 16, // 3 rows
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHigh,
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.md),
+                          border:
+                              Border.all(color: cs.outline),
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: GridView.builder(
+                          physics:
+                              const ClampingScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
+                            childAspectRatio: 1,
                           ),
-                        );
-                      }).toList(),
+                          itemCount: _kIcons.length,
+                          itemBuilder: (ctx, index) {
+                            final icon = _kIcons[index];
+                            final selected = icon.codePoint ==
+                                _selectedIconCodePoint;
+                            return GestureDetector(
+                              onTap: () => setState(() =>
+                                  _selectedIconCodePoint =
+                                      icon.codePoint),
+                              child: AnimatedContainer(
+                                duration: const Duration(
+                                    milliseconds: 150),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? accentColor
+                                      : cs.surfaceContainer,
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                          AppRadius.md),
+                                  border: Border.all(
+                                    color: selected
+                                        ? accentColor
+                                        : cs.outline
+                                            .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                child: Icon(
+                                  icon,
+                                  size: 22,
+                                  color: selected
+                                      ? Colors.white
+                                      : cs.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
 
@@ -474,9 +508,11 @@ class _AddEditCollectionScreenState
 // ─────────────────────────────────────────────
 class _Section extends StatelessWidget {
   final String label;
+  final String? hint;
   final Widget child;
 
-  const _Section({required this.label, required this.child});
+  const _Section(
+      {required this.label, this.hint, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -487,14 +523,31 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: cs.onSurfaceVariant,
-            ),
+          Row(
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.8,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              if (hint != null) ...[
+                const Spacer(),
+                Text(
+                  hint!,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurfaceVariant
+                        .withValues(alpha: 0.55),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           child,

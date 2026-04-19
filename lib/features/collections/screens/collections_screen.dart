@@ -82,6 +82,7 @@ class CollectionsScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => UncontrolledProviderScope(
         container: ProviderScope.containerOf(context),

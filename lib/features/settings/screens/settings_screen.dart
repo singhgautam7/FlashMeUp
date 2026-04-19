@@ -203,8 +203,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     Divider(height: 1, color: cs.outline),
                     SettingsTile(
                       icon: Icons.upload_file_rounded,
-                      label: 'Import Data',
-                      subtitle: 'Add cards from a JSON backup',
+                      label: 'Import/Export Data',
+                      subtitle: 'Add/Share cards from a JSON backup',
                       onTap: () => _showImportSheet(context),
                       trailing: Icon(
                         Icons.chevron_right_rounded,
@@ -213,18 +213,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ),
                     Divider(height: 1, color: cs.outline),
-                    SettingsTile(
-                      icon: Icons.download_rounded,
-                      label: 'Export Data',
-                      subtitle: 'Backup all collections as JSON',
-                      onTap: () => _showExportSheet(context),
-                      trailing: Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    Divider(height: 1, color: cs.outline),
+                    // SettingsTile(
+                    //   icon: Icons.download_rounded,
+                    //   label: 'Export Data',
+                    //   subtitle: 'Backup all collections as JSON',
+                    //   onTap: () => _showExportSheet(context),
+                    //   trailing: Icon(
+                    //     Icons.chevron_right_rounded,
+                    //     size: 20,
+                    //     color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                    //   ),
+                    // ),
+                    // Divider(height: 1, color: cs.outline),
                     SettingsTile(
                       icon: Icons.delete_outline_rounded,
                       label: 'Clear All Data',

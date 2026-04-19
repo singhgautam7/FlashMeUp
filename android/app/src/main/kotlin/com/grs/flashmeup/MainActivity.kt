@@ -1,4 +1,4 @@
-package com.example.flashmeup
+package com.grs.flashmeup
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -11,6 +11,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final bool showBack;
   final double? horizontalPadding;
   final Widget? badge; // e.g. "DRAFT SAVED" chip
+  final VoidCallback? onBack;
 
   const AppBarWidget({
     super.key,
@@ -19,6 +20,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     this.showBack = false,
     this.horizontalPadding,
     this.badge,
+    this.onBack,
   });
 
   @override
@@ -40,7 +42,9 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
               if (showBack) ...[
                 GestureDetector(
                   onTap: () {
-                    if (context.canPop()) {
+                    if (onBack != null) {
+                      onBack!();
+                    } else if (context.canPop()) {
                       context.pop();
                     }
                   },

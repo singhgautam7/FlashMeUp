@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/models/flashcard.dart';
+import '../../../core/models/tag.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_bar_widget.dart';
@@ -31,6 +32,7 @@ class _AddEditFlashcardScreenState
   final _contentController = TextEditingController();
   bool _previewMode = false;
   bool _isDirty = false;
+  Set<String> _selectedTagIds = {};
 
   bool get _isEdit => widget.cardId != null;
 
@@ -51,7 +53,9 @@ class _AddEditFlashcardScreenState
       if (card != null) {
         _titleController.text = card.title;
         _contentController.text = card.content;
-        setState(() {});
+        setState(() {
+          _selectedTagIds = Set.from(card.tagIds);
+        });
       }
     });
     _titleController
@@ -71,10 +75,12 @@ class _AddEditFlashcardScreenState
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
     final content = _contentController.text.trim();
+    final tagIds = _selectedTagIds.toList();
 
     if (_isEdit && _existingCard != null) {
       ref.read(flashcardsProvider.notifier).update(
-            _existingCard!.copyWith(title: title, content: content),
+            _existingCard!
+                .copyWith(title: title, content: content, tagIds: tagIds),
           );
     } else {
       ref.read(flashcardsProvider.notifier).add(
@@ -82,6 +88,7 @@ class _AddEditFlashcardScreenState
               collectionId: widget.collectionId,
               title: title,
               content: content,
+              tagIds: tagIds,
             ),
           );
     }
@@ -124,13 +131,19 @@ class _AddEditFlashcardScreenState
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final charCount = _contentController.text.length;
+    final allTags = ref.watch(tagsProvider);
 
     final collection = ref
         .watch(collectionsProvider)
         .where((c) => c.id == widget.collectionId)
         .firstOrNull;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isDirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _discard();
+      },
+      child: Scaffold(
       backgroundColor: cs.surface,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -138,6 +151,7 @@ class _AddEditFlashcardScreenState
           showBack: true,
           title: _isEdit ? 'Edit Card' : 'Add Card',
           badge: _isDirty ? const AppBarBadge('UNSAVED') : null,
+          onBack: _discard,
         ),
       ),
       body: Column(
@@ -186,7 +200,7 @@ class _AddEditFlashcardScreenState
                         _Label('CARD BACK (EXPLANATION)'),
                         const SizedBox(height: AppSpacing.sm),
 
-                        // ── Format toolbar — OWN ROW ──────────
+                        // ── Format toolbar ────────────────────
                         _FormatToolbar(
                           controller: _contentController,
                           onChanged: () => setState(() {}),
@@ -241,6 +255,25 @@ class _AddEditFlashcardScreenState
                                                     color:
                                                         cs.onSurface,
                                                   ),
+                                              blockquoteDecoration:
+                                                  BoxDecoration(
+                                                color: cs
+                                                    .surfaceContainerHigh,
+                                                borderRadius:
+                                                    BorderRadius
+                                                        .circular(
+                                                            AppRadius
+                                                                .sm),
+                                                border: Border(
+                                                  left: BorderSide(
+                                                      color: cs.primary,
+                                                      width: 3),
+                                                ),
+                                              ),
+                                              blockquotePadding:
+                                                  const EdgeInsets
+                                                      .fromLTRB(
+                                                          12, 8, 12, 8),
                                             ),
                                           ),
                                   )
@@ -300,6 +333,116 @@ class _AddEditFlashcardScreenState
                             ),
                           ],
                         ),
+
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // ── TAGS ──────────────────────────────
+                        Row(
+                          children: [
+                            _Label('TAGS'),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () =>
+                                  _showAddTagDialog(context, allTags),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add_rounded,
+                                      size: 14, color: cs.primary),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'New Tag',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: cs.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        if (allTags.isEmpty)
+                          Text(
+                            'No tags yet. Tap "New Tag" to create one.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: cs.onSurfaceVariant
+                                  .withValues(alpha: 0.55),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          )
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: allTags.map((tag) {
+                              final isSelected =
+                                  _selectedTagIds.contains(tag.id);
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isDirty = true;
+                                    if (isSelected) {
+                                      _selectedTagIds =
+                                          Set.from(_selectedTagIds)
+                                            ..remove(tag.id);
+                                    } else {
+                                      _selectedTagIds =
+                                          Set.from(_selectedTagIds)
+                                            ..add(tag.id);
+                                    }
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(
+                                      milliseconds: 150),
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? cs.primary
+                                            .withValues(alpha: 0.12)
+                                        : cs.surfaceContainerHigh,
+                                    borderRadius:
+                                        BorderRadius.circular(
+                                            AppRadius.full),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? cs.primary
+                                              .withValues(alpha: 0.5)
+                                          : cs.outline,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isSelected) ...[
+                                        Icon(Icons.check_rounded,
+                                            size: 12,
+                                            color: cs.primary),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      Text(
+                                        '#${tag.name}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected
+                                              ? cs.primary
+                                              : cs.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
                       ],
                     ),
                   ),
@@ -308,7 +451,7 @@ class _AddEditFlashcardScreenState
             ),
           ),
 
-          // ── Fixed bottom action bar — ONE ROW ──────────
+          // ── Fixed bottom action bar ──────────────
           _ActionBar(
             onSave: _save,
             onDiscard: _discard,
@@ -316,6 +459,76 @@ class _AddEditFlashcardScreenState
             isEdit: _isEdit,
           ),
         ],
+      ),
+    ),
+    );
+  }
+
+  void _showAddTagDialog(BuildContext context, List<Tag> existingTags) {
+    final cs = Theme.of(context).colorScheme;
+    final controller = TextEditingController();
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            side: BorderSide(color: cs.outline),
+          ),
+          backgroundColor: cs.surfaceContainer,
+          title: const Text('New Tag'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                textCapitalization: TextCapitalization.none,
+                style: TextStyle(color: cs.onSurface),
+                decoration: InputDecoration(
+                  hintText: 'e.g. vocabulary, physics',
+                  hintStyle:
+                      TextStyle(color: cs.onSurfaceVariant),
+                  prefixText: '# ',
+                  errorText: error,
+                ),
+                onChanged: (_) {
+                  if (error != null) {
+                    setDialogState(() => error = null);
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = controller.text.trim().toLowerCase();
+                if (name.isEmpty) return;
+                if (existingTags.any((t) => t.name == name)) {
+                  setDialogState(
+                      () => error = 'Tag already exists');
+                  return;
+                }
+                final newTag = Tag(name: name);
+                ref.read(tagsProvider.notifier).add(newTag);
+                setState(() {
+                  _selectedTagIds =
+                      Set.from(_selectedTagIds)..add(newTag.id);
+                  _isDirty = true;
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -344,7 +557,7 @@ class _Label extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Format toolbar — own row, no eye icon
+// Format toolbar
 // ─────────────────────────────────────────────
 class _FormatToolbar extends StatelessWidget {
   final TextEditingController controller;
@@ -434,7 +647,7 @@ class _FormatToolbar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Bottom action bar — ONE ROW: SAVE + DISCARD
+// Bottom action bar
 // ─────────────────────────────────────────────
 class _ActionBar extends StatelessWidget {
   final VoidCallback onSave;
@@ -477,7 +690,7 @@ class _ActionBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: AppButton(
-              label: isEdit ? 'SAVE' : 'SAVE',
+              label: 'SAVE',
               type: AppButtonType.primary,
               height: 52,
               onPressed: canSave ? onSave : null,

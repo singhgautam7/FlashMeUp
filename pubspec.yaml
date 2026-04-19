@@ -1,4 +1,4 @@
-name: FlashMeUp
+name: flashmeup
 description: "FlashMeUp — offline-first flashcard"
 publish_to: 'none'
 
@@ -19,6 +19,9 @@ dependencies:
   flutter_markdown: ^0.7.7
   uuid: ^4.5.3
   shared_preferences: ^2.3.5
+  share_plus: ^10.0.3
+  path_provider: ^2.1.4
+  file_picker: ^8.1.6
 
 dev_dependencies:
   flutter_test:

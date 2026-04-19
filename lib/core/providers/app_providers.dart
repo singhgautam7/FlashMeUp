@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/collection.dart';
 import '../models/flashcard.dart';
+import '../models/tag.dart';
 import 'persistence_service.dart';
 
 // ─────────────────────────────────────────────
@@ -13,8 +14,19 @@ final themeModeProvider =
         (ref) => ThemeModeNotifier());
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system);
-  void setMode(ThemeMode mode) => state = mode;
+  ThemeModeNotifier() : super(ThemeMode.system) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final mode = await PersistenceService.loadThemeMode();
+    if (mounted) state = mode;
+  }
+
+  void setMode(ThemeMode mode) {
+    state = mode;
+    PersistenceService.saveThemeMode(mode);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -111,6 +123,73 @@ class FlashcardsNotifier extends StateNotifier<List<Flashcard>> {
   void clear() {
     state = [];
     PersistenceService.saveFlashcards(state);
+  }
+
+  void recordReview(String id, bool wasCorrect) {
+    state = state.map((f) {
+      if (f.id != id) return f;
+      return f.copyWith(
+        timesReviewed: f.timesReviewed + 1,
+        correctCount: f.correctCount + (wasCorrect ? 1 : 0),
+        lastReviewedAt: DateTime.now(),
+      );
+    }).toList();
+    PersistenceService.saveFlashcards(state);
+  }
+
+  void removeTagFromAll(String tagId) {
+    state = state.map((f) {
+      if (!f.tagIds.contains(tagId)) return f;
+      return f.copyWith(
+          tagIds: f.tagIds.where((t) => t != tagId).toList());
+    }).toList();
+    PersistenceService.saveFlashcards(state);
+  }
+}
+
+// ─────────────────────────────────────────────
+// Tags
+// ─────────────────────────────────────────────
+final tagsProvider =
+    StateNotifierProvider<TagsNotifier, List<Tag>>(
+        (ref) => TagsNotifier(ref));
+
+class TagsNotifier extends StateNotifier<List<Tag>> {
+  final Ref _ref;
+
+  TagsNotifier(this._ref) : super([]) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final data = await PersistenceService.loadTags();
+    if (mounted) state = data;
+  }
+
+  void add(Tag t) {
+    state = [...state, t];
+    PersistenceService.saveTags(state);
+  }
+
+  void delete(String id) {
+    state = state.where((t) => t.id != id).toList();
+    PersistenceService.saveTags(state);
+    _ref.read(flashcardsProvider.notifier).removeTagFromAll(id);
+  }
+
+  void rename(String id, String newName) {
+    state = state.map((t) => t.id == id ? t.copyWith(name: newName) : t).toList();
+    PersistenceService.saveTags(state);
+  }
+
+  void replaceAll(List<Tag> tags) {
+    state = tags;
+    PersistenceService.saveTags(state);
+  }
+
+  void clear() {
+    state = [];
+    PersistenceService.saveTags(state);
   }
 }
 

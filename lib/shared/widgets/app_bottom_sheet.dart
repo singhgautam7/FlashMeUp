@@ -9,7 +9,7 @@ class AppBottomSheet extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? leadingIcon;
-  final Widget child;
+  final Widget? child;
   final Widget? actions;
 
   const AppBottomSheet({
@@ -17,7 +17,7 @@ class AppBottomSheet extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.leadingIcon,
-    required this.child,
+    this.child,
     this.actions,
   });
 
@@ -120,13 +120,14 @@ class AppBottomSheet extends StatelessWidget {
             // Divider
             Divider(height: 1, thickness: 0.5, color: cs.outline),
 
-            // Scrollable body
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                child: child,
+            // Scrollable body (optional)
+            if (child != null)
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                  child: child!,
+                ),
               ),
-            ),
 
             if (actions != null)
               Padding(

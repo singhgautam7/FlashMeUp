@@ -5,6 +5,8 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_bar_widget.dart';
 import '../../../shared/widgets/settings_widgets.dart';
+import '../../import_export/import_export_service.dart';
+import '../../import_export/widgets/import_export_sheet.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -127,59 +129,59 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: AppSpacing.xl),
 
-                // ── STUDY PREFERENCES ────────────────────────
-                const SectionLabel(label: 'STUDY PREFERENCES'),
-                const SizedBox(height: AppSpacing.sm),
-                SettingsCard(
-                  children: [
-                    SettingsTile(
-                      icon: Icons.repeat_rounded,
-                      label: 'Spaced Repetition',
-                      subtitle: 'SuperMemo-2 algorithm',
-                      trailing: Switch(
-                        value: true,
-                        onChanged: (_) {},
-                      ),
-                    ),
-                    Divider(height: 1, color: cs.outline),
-                    SettingsTile(
-                      icon: Icons.shuffle_rounded,
-                      label: 'Shuffle Cards',
-                      subtitle: 'Randomize review order',
-                      trailing: Switch(
-                        value: false,
-                        onChanged: (_) {},
-                      ),
-                    ),
-                    Divider(height: 1, color: cs.outline),
-                    SettingsTile(
-                      icon: Icons.timer_outlined,
-                      label: 'Daily Goal',
-                      subtitle: 'Cards per session',
-                      onTap: () {},
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '20 cards',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 20,
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                // // ── STUDY PREFERENCES ────────────────────────
+                // const SectionLabel(label: 'STUDY PREFERENCES'),
+                // const SizedBox(height: AppSpacing.sm),
+                // SettingsCard(
+                //   children: [
+                //     SettingsTile(
+                //       icon: Icons.repeat_rounded,
+                //       label: 'Spaced Repetition',
+                //       subtitle: 'SuperMemo-2 algorithm',
+                //       trailing: Switch(
+                //         value: true,
+                //         onChanged: (_) {},
+                //       ),
+                //     ),
+                //     Divider(height: 1, color: cs.outline),
+                //     SettingsTile(
+                //       icon: Icons.shuffle_rounded,
+                //       label: 'Shuffle Cards',
+                //       subtitle: 'Randomize review order',
+                //       trailing: Switch(
+                //         value: false,
+                //         onChanged: (_) {},
+                //       ),
+                //     ),
+                //     Divider(height: 1, color: cs.outline),
+                //     SettingsTile(
+                //       icon: Icons.timer_outlined,
+                //       label: 'Daily Goal',
+                //       subtitle: 'Cards per session',
+                //       onTap: () {},
+                //       trailing: Row(
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           Text(
+                //             '20 cards',
+                //             style: TextStyle(
+                //               fontSize: 14,
+                //               color: cs.onSurfaceVariant,
+                //             ),
+                //           ),
+                //           const SizedBox(width: AppSpacing.sm),
+                //           Icon(
+                //             Icons.chevron_right_rounded,
+                //             size: 20,
+                //             color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                //           ),
+                //         ],
+                //       ),
+                //     ),
+                //   ],
+                // ),
 
-                const SizedBox(height: AppSpacing.xl),
+                // const SizedBox(height: AppSpacing.xl),
 
                 // ── DATA ────────────────────────────────────
                 const SectionLabel(label: 'DATA'),
@@ -202,8 +204,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     SettingsTile(
                       icon: Icons.upload_file_rounded,
                       label: 'Import Data',
-                      subtitle: 'Add cards from CSV',
-                      onTap: () {},
+                      subtitle: 'Add cards from a JSON backup',
+                      onTap: () => _showImportSheet(context),
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         size: 20,
@@ -214,8 +216,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     SettingsTile(
                       icon: Icons.download_rounded,
                       label: 'Export Data',
-                      subtitle: 'Backup all collections as CSV',
-                      onTap: () {},
+                      subtitle: 'Backup all collections as JSON',
+                      onTap: () => _showExportSheet(context),
                       trailing: Icon(
                         Icons.chevron_right_rounded,
                         size: 20,
@@ -276,6 +278,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  // ─────────────────────────────────────────────
+  // Export
+  // ─────────────────────────────────────────────
+  Future<void> _showExportSheet(BuildContext context) async {
+    final cs = Theme.of(context).colorScheme;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: BorderSide(color: cs.outline),
+        ),
+        backgroundColor: cs.surfaceContainer,
+        title: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.download_rounded, color: cs.primary, size: 20),
+          const SizedBox(width: 10),
+          const Text('Export Data'),
+        ]),
+        content: Text(
+          'This will export all your collections, cards, and tags as a JSON file.',
+          style: TextStyle(color: cs.onSurface, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Export & Share')),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await ImportExportService.exportFile(
+        collections: ref.read(collectionsProvider),
+        flashcards: ref.read(flashcardsProvider),
+        tags: ref.read(tagsProvider),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e')),
+        );
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Import
+  // ─────────────────────────────────────────────
+  void _showImportSheet(BuildContext context) {
+    ImportExportSheet.show(context);
   }
 
   // ─────────────────────────────────────────────
@@ -427,6 +484,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(ctx);
               ref.read(collectionsProvider.notifier).clear();
               ref.read(flashcardsProvider.notifier).clear();
+              ref.read(tagsProvider.notifier).clear();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('All data cleared.'),

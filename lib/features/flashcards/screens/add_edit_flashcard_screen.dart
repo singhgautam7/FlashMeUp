@@ -150,6 +150,11 @@ class _AddEditFlashcardScreenState
                   PageHeader(
                     label: 'Collection',
                     title: collection?.title ?? 'Flashcard',
+                    icon: collection != null
+                        ? IconData(collection.iconCodePoint,
+                            fontFamily: 'MaterialIcons')
+                        : null,
+                    iconColor: collection?.color,
                   ),
 
                   Padding(
@@ -423,16 +428,6 @@ class _FormatToolbar extends StatelessWidget {
         btn(Icons.format_quote_rounded,
             () => _insert('\n> ', ''),
             tooltip: 'Blockquote'),
-        const Spacer(),
-        // Preview toggle (separate from format btns, right-aligned)
-        btn(
-          previewMode
-              ? Icons.edit_rounded
-              : Icons.visibility_outlined,
-          onTogglePreview,
-          active: previewMode,
-          tooltip: previewMode ? 'Edit' : 'Preview',
-        ),
       ],
     );
   }
@@ -481,7 +476,6 @@ class _ActionBar extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            flex: 2,
             child: AppButton(
               label: isEdit ? 'SAVE' : 'SAVE',
               type: AppButtonType.primary,

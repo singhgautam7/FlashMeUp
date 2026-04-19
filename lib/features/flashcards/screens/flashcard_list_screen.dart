@@ -1,4 +1,3 @@
-import 'dart:math' show pi;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -140,40 +139,49 @@ class _FlashcardListScreenState
           ),
 
           // ── Controls row ──────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg),
-            sliver: SliverToBoxAdapter(
-              child: _ViewToggle(
-                viewMode: _viewMode,
-                onToggle: (v) => setState(() => _viewMode = v),
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(
-              child: SizedBox(height: AppSpacing.md)),
-
-          // ── Main content ──────────────────────────
-          if (_viewMode == _ViewMode.card)
-            SliverToBoxAdapter(
-              child: _CardSection(
-                flashcards: flashcards,
-                collection: collection,
-                pageController: _pageController,
-                currentPage: _currentPage,
-                onPageChanged: (i) =>
-                    setState(() => _currentPage = i),
-                onNavigate: (page) =>
-                    _goToPage(page, flashcards.length),
+          if (flashcards.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _EmptyCardPlaceholder(
                 collectionId: widget.collectionId,
               ),
             )
-          else
-            _TableView(
-              flashcards: flashcards,
-              collectionId: widget.collectionId,
+          else ...[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg),
+              sliver: SliverToBoxAdapter(
+                child: _ViewToggle(
+                  viewMode: _viewMode,
+                  onToggle: (v) => setState(() => _viewMode = v),
+                ),
+              ),
             ),
+
+            const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.md)),
+
+            // ── Main content ──────────────────────────
+            if (_viewMode == _ViewMode.card)
+              SliverToBoxAdapter(
+                child: _CardSection(
+                  flashcards: flashcards,
+                  collection: collection,
+                  pageController: _pageController,
+                  currentPage: _currentPage,
+                  onPageChanged: (i) =>
+                      setState(() => _currentPage = i),
+                  onNavigate: (page) =>
+                      _goToPage(page, flashcards.length),
+                  collectionId: widget.collectionId,
+                ),
+              )
+            else
+              _TableView(
+                flashcards: flashcards,
+                collectionId: widget.collectionId,
+              ),
+          ],
 
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
@@ -357,26 +365,23 @@ class _CardSection extends StatelessWidget {
           // PageView
           SizedBox(
             height: 380,
-            child: total == 0
-                ? _EmptyCardPlaceholder(
-                    collectionId: collectionId)
-                : PageView.builder(
-                    controller: pageController,
-                    itemCount: total,
-                    onPageChanged: onPageChanged,
-                    itemBuilder: (ctx, index) {
-                      final card = flashcards[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4),
-                        child: _FlashCardPage(
-                          key: ValueKey(card.id),
-                          card: card,
-                          collection: collection,
-                        ),
-                      );
-                    },
+            child: PageView.builder(
+              controller: pageController,
+              itemCount: total,
+              onPageChanged: onPageChanged,
+              itemBuilder: (ctx, index) {
+                final card = flashcards[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _FlashCardPage(
+                    key: ValueKey(card.id),
+                    card: card,
+                    collection: collection,
+                    isFocused: index == currentPage,
                   ),
+                );
+              },
+            ),
           ),
 
           // Navigation arrows row
@@ -538,11 +543,13 @@ class _EmptyCardPlaceholder extends StatelessWidget {
 class _FlashCardPage extends ConsumerStatefulWidget {
   final Flashcard card;
   final FlashcardCollection collection;
+  final bool isFocused;
 
   const _FlashCardPage({
     super.key,
     required this.card,
     required this.collection,
+    required this.isFocused,
   });
 
   @override
@@ -550,31 +557,26 @@ class _FlashCardPage extends ConsumerStatefulWidget {
       _FlashCardPageState();
 }
 
-class _FlashCardPageState extends ConsumerState<_FlashCardPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
+class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
+  bool _showBack = false;
 
   @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 420),
-    );
-  }
-
-  void _flip() {
-    if (_ctrl.value < 0.5) {
-      _ctrl.forward();
-    } else {
-      _ctrl.reverse();
+  void didUpdateWidget(covariant _FlashCardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // When the card loses focus (user swipes away), reset to the front face.
+    if (oldWidget.isFocused && !widget.isFocused) {
+      if (_showBack) {
+        setState(() {
+          _showBack = false;
+        });
+      }
     }
   }
 
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
+  void _flip() {
+    setState(() {
+      _showBack = !_showBack;
+    });
   }
 
   Future<void> _showOptions(BuildContext context) async {
@@ -598,29 +600,31 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage>
     return GestureDetector(
       onTap: _flip,
       onLongPress: () => _showOptions(context),
-      child: AnimatedBuilder(
-        animation: _ctrl,
-        builder: (ctx, _) {
-          final angle = _ctrl.value * pi;
-          final showBack = angle > pi / 2;
-
-          final Matrix4 matrix = Matrix4.identity()
-            ..setEntry(3, 2, 0.001)
-            ..rotateY(showBack ? angle - pi : angle);
-
-          return Transform(
-            alignment: Alignment.center,
-            transform: matrix,
-            child: showBack
-                ? _BackFace(
-                    card: widget.card, cs: cs)
-                : _FrontFace(
-                    card: widget.card,
-                    collection: widget.collection,
-                    cs: cs,
-                  ),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+              child: child,
+            ),
           );
         },
+        child: _showBack
+            ? _BackFace(
+                key: const ValueKey('back'),
+                card: widget.card,
+                cs: cs,
+              )
+            : _FrontFace(
+                key: const ValueKey('front'),
+                card: widget.card,
+                collection: widget.collection,
+                cs: cs,
+              ),
       ),
     );
   }
@@ -738,6 +742,7 @@ class _FrontFace extends StatelessWidget {
   final ColorScheme cs;
 
   const _FrontFace({
+    super.key,
     required this.card,
     required this.collection,
     required this.cs,
@@ -818,7 +823,7 @@ class _FrontFace extends StatelessWidget {
                     ),
                   ),
 
-                  // "VIEW SIDE B" footer
+                  // "VIEW ANSWER" footer
                   Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -842,7 +847,7 @@ class _FrontFace extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'VIEW SIDE B',
+                          'VIEW ANSWER',
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
@@ -871,7 +876,11 @@ class _BackFace extends StatelessWidget {
   final Flashcard card;
   final ColorScheme cs;
 
-  const _BackFace({required this.card, required this.cs});
+  const _BackFace({
+    super.key,
+    required this.card,
+    required this.cs,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -892,7 +901,7 @@ class _BackFace extends StatelessWidget {
             child: Row(
               children: [
                 Text(
-                  'SIDE B',
+                  'ANSWER',
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.w700,

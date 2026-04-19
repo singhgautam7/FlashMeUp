@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 
@@ -38,7 +39,11 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
             children: [
               if (showBack) ...[
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    }
+                  },
                   child: Icon(
                     Icons.arrow_back_rounded,
                     color: cs.onSurface,

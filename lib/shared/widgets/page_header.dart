@@ -41,14 +41,19 @@ class PageHeader extends StatelessWidget {
             const SizedBox(height: 4),
           ],
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: 28,
-                  color: iconColor ?? cs.primary,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconColor ?? cs.primary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 22, color: Colors.white),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
               ],
               Expanded(
                 child: Text(

@@ -84,6 +84,7 @@ class _AddEditCollectionScreenState
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _nameFocus = FocusNode();
+  late final ScrollController _outerCtrl;
   bool _saving = false;
 
   late int _selectedColorValue;
@@ -103,6 +104,7 @@ class _AddEditCollectionScreenState
   @override
   void initState() {
     super.initState();
+    _outerCtrl = ScrollController();
     final ex = _existing;
     _nameController.text = ex?.title ?? '';
     _descController.text = ex?.description ?? '';
@@ -121,6 +123,7 @@ class _AddEditCollectionScreenState
     _nameController.dispose();
     _descController.dispose();
     _nameFocus.dispose();
+    _outerCtrl.dispose();
     super.dispose();
   }
 
@@ -168,6 +171,7 @@ class _AddEditCollectionScreenState
         children: [
           Expanded(
             child: SingleChildScrollView(
+              controller: _outerCtrl,
               padding:
                   const EdgeInsets.only(bottom: AppSpacing.xl),
               child: Column(
@@ -399,7 +403,16 @@ class _AddEditCollectionScreenState
                               Border.all(color: cs.outline),
                         ),
                         padding: const EdgeInsets.all(8),
-                        child: GridView.builder(
+                        child: NotificationListener<OverscrollNotification>(
+                          onNotification: (n) {
+                            if (_outerCtrl.hasClients) {
+                              final next = (_outerCtrl.offset + n.overscroll)
+                                  .clamp(0.0, _outerCtrl.position.maxScrollExtent);
+                              _outerCtrl.jumpTo(next);
+                            }
+                            return true;
+                          },
+                          child: GridView.builder(
                           physics:
                               const ClampingScrollPhysics(),
                           gridDelegate:
@@ -445,6 +458,7 @@ class _AddEditCollectionScreenState
                               ),
                             );
                           },
+                        ),
                         ),
                       ),
                     ),

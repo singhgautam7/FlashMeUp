@@ -136,6 +136,7 @@ class _AddEditFlashcardScreenState
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBarWidget(
           showBack: true,
+          title: _isEdit ? 'Edit Card' : 'Add Card',
           badge: _isDirty ? const AppBarBadge('UNSAVED') : null,
         ),
       ),
@@ -148,8 +149,7 @@ class _AddEditFlashcardScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   PageHeader(
-                    label: 'Collection',
-                    title: collection?.title ?? 'Flashcard',
+                    title: collection?.title ?? 'New Card',
                     icon: collection != null
                         ? IconData(collection.iconCodePoint,
                             fontFamily: 'MaterialIcons')

@@ -11,12 +11,15 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/utils/markdown_utils.dart';
 import '../../../shared/widgets/app_bar_widget.dart';
+import '../../../shared/widgets/app_bottom_sheet.dart';
+import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_how_to_sheet.dart';
 import '../../../shared/widgets/fmu_fab.dart';
 import '../../../shared/widgets/page_header.dart';
 import '../../import_export/widgets/import_export_sheet.dart';
 
 enum _ViewMode { card, table }
+
 
 class FlashcardListScreen extends ConsumerStatefulWidget {
   final String collectionId;
@@ -33,17 +36,20 @@ class _FlashcardListScreenState
   _ViewMode _viewMode = _ViewMode.card;
 
   late final PageController _pageController;
+  late final ScrollController _outerScrollController;
   int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _outerScrollController = ScrollController();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _outerScrollController.dispose();
     super.dispose();
   }
 
@@ -80,6 +86,7 @@ class _FlashcardListScreenState
         preferredSize: const Size.fromHeight(kToolbarHeight),
         child: AppBarWidget(
           showBack: true,
+          title: 'Collection',
           actions: [
             PopupMenuButton<String>(
               onSelected: (value) {
@@ -130,11 +137,13 @@ class _FlashcardListScreenState
         ),
       ),
       body: CustomScrollView(
+        controller: _outerScrollController,
         slivers: [
           SliverToBoxAdapter(
             child: PageHeader(
-              label: 'Collection',
               title: collection.title,
+              icon: collection.iconData,
+              iconColor: collection.color,
             ),
           ),
 
@@ -151,9 +160,12 @@ class _FlashcardListScreenState
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.lg),
               sliver: SliverToBoxAdapter(
-                child: _ViewToggle(
-                  viewMode: _viewMode,
-                  onToggle: (v) => setState(() => _viewMode = v),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _ViewToggle(
+                    viewMode: _viewMode,
+                    onToggle: (v) => setState(() => _viewMode = v),
+                  ),
                 ),
               ),
             ),
@@ -174,11 +186,13 @@ class _FlashcardListScreenState
                   onNavigate: (page) =>
                       _goToPage(page, flashcards.length),
                   collectionId: widget.collectionId,
+                  outerController: _outerScrollController,
                 ),
               )
             else
               _TableView(
                 flashcards: flashcards,
+                collection: collection,
                 collectionId: widget.collectionId,
               ),
           ],
@@ -199,8 +213,7 @@ class _FlashcardListScreenState
     if (cards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content:
-                Text('Add some cards first to start a quiz!'),
+            content: Text('Add some cards first to start a quiz!'),
             duration: Duration(seconds: 2)),
       );
       return;
@@ -299,7 +312,7 @@ class _ViewToggle extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// CARD SECTION — PageView + nav + tags
+// CARD SECTION
 // ─────────────────────────────────────────────
 class _CardSection extends StatelessWidget {
   final List<Flashcard> flashcards;
@@ -309,6 +322,7 @@ class _CardSection extends StatelessWidget {
   final ValueChanged<int> onPageChanged;
   final ValueChanged<int> onNavigate;
   final String collectionId;
+  final ScrollController outerController;
 
   const _CardSection({
     required this.flashcards,
@@ -318,13 +332,14 @@ class _CardSection extends StatelessWidget {
     required this.onPageChanged,
     required this.onNavigate,
     required this.collectionId,
+    required this.outerController,
   });
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final total = flashcards.length;
-    final displayNum = currentPage + 1; // 1-indexed for display
+    final displayNum = currentPage + 1;
 
     return Padding(
       padding:
@@ -332,7 +347,6 @@ class _CardSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Card count — ALL CAPS, accent numbers
           if (total > 0)
             Padding(
               padding:
@@ -362,7 +376,6 @@ class _CardSection extends StatelessWidget {
               ),
             ),
 
-          // PageView
           SizedBox(
             height: 380,
             child: PageView.builder(
@@ -372,19 +385,20 @@ class _CardSection extends StatelessWidget {
               itemBuilder: (ctx, index) {
                 final card = flashcards[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4),
                   child: _FlashCardPage(
                     key: ValueKey(card.id),
                     card: card,
-                    collection: collection,
+                    accentColor: collection.color,
                     isFocused: index == currentPage,
+                    outerController: outerController,
                   ),
                 );
               },
             ),
           ),
 
-          // Navigation arrows row
           if (total > 0) ...[
             const SizedBox(height: AppSpacing.lg),
             Row(
@@ -413,7 +427,6 @@ class _CardSection extends StatelessWidget {
             ),
           ],
 
-          // DECK TAGS section
           const SizedBox(height: AppSpacing.xl),
           Text(
             'DECK TAGS',
@@ -495,7 +508,7 @@ class _NavArrow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Empty card placeholder — full width, no bg
+// Empty card placeholder
 // ─────────────────────────────────────────────
 class _EmptyCardPlaceholder extends StatelessWidget {
   final String collectionId;
@@ -542,14 +555,16 @@ class _EmptyCardPlaceholder extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _FlashCardPage extends ConsumerStatefulWidget {
   final Flashcard card;
-  final FlashcardCollection collection;
+  final Color accentColor;
   final bool isFocused;
+  final ScrollController outerController;
 
   const _FlashCardPage({
     super.key,
     required this.card,
-    required this.collection,
+    required this.accentColor,
     required this.isFocused,
+    required this.outerController,
   });
 
   @override
@@ -563,21 +578,12 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
   @override
   void didUpdateWidget(covariant _FlashCardPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // When the card loses focus (user swipes away), reset to the front face.
-    if (oldWidget.isFocused && !widget.isFocused) {
-      if (_showBack) {
-        setState(() {
-          _showBack = false;
-        });
-      }
+    if (oldWidget.isFocused && !widget.isFocused && _showBack) {
+      setState(() => _showBack = false);
     }
   }
 
-  void _flip() {
-    setState(() {
-      _showBack = !_showBack;
-    });
-  }
+  void _flip() => setState(() => _showBack = !_showBack);
 
   Future<void> _showOptions(BuildContext context) async {
     final cs = Theme.of(context).colorScheme;
@@ -587,8 +593,7 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => UncontrolledProviderScope(
         container: ProviderScope.containerOf(context),
-        child: _CardOptionsSheet(
-            card: widget.card, cs: cs),
+        child: _CardOptionsSheet(card: widget.card, cs: cs),
       ),
     );
   }
@@ -596,7 +601,6 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-
     return GestureDetector(
       onTap: _flip,
       onLongPress: () => _showOptions(context),
@@ -608,7 +612,8 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
           return FadeTransition(
             opacity: animation,
             child: ScaleTransition(
-              scale: Tween<double>(begin: 0.95, end: 1.0).animate(animation),
+              scale:
+                  Tween<double>(begin: 0.95, end: 1.0).animate(animation),
               child: child,
             ),
           );
@@ -618,11 +623,12 @@ class _FlashCardPageState extends ConsumerState<_FlashCardPage> {
                 key: const ValueKey('back'),
                 card: widget.card,
                 cs: cs,
+                outerController: widget.outerController,
               )
             : _FrontFace(
                 key: const ValueKey('front'),
                 card: widget.card,
-                collection: widget.collection,
+                accentColor: widget.accentColor,
                 cs: cs,
               ),
       ),
@@ -675,8 +681,7 @@ class _CardOptionsSheet extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             ListTile(
-              leading: Icon(Icons.edit_outlined,
-                  color: cs.primary),
+              leading: Icon(Icons.edit_outlined, color: cs.primary),
               title: const Text('Edit Card'),
               onTap: () {
                 Navigator.of(context).pop();
@@ -685,12 +690,11 @@ class _CardOptionsSheet extends ConsumerWidget {
               },
             ),
             ListTile(
-              leading: Icon(
-                  Icons.delete_outline_rounded, color: cs.error),
+              leading: Icon(Icons.delete_outline_rounded,
+                  color: cs.error),
               title: Text('Delete Card',
                   style: TextStyle(color: cs.error)),
-              onTap: () =>
-                  _confirmDelete(context, ref),
+              onTap: () => _confirmDelete(context, ref),
             ),
             const SizedBox(height: 8),
           ],
@@ -734,24 +738,22 @@ class _CardOptionsSheet extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────
-// Front face
+// Front face — no collection chip
 // ─────────────────────────────────────────────
 class _FrontFace extends StatelessWidget {
   final Flashcard card;
-  final FlashcardCollection collection;
+  final Color accentColor;
   final ColorScheme cs;
 
   const _FrontFace({
     super.key,
     required this.card,
-    required this.collection,
+    required this.accentColor,
     required this.cs,
   });
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = collection.color;
-
     return Container(
       decoration: BoxDecoration(
         color: cs.surfaceContainer,
@@ -765,46 +767,10 @@ class _FrontFace extends StatelessWidget {
           Container(height: 4, color: accentColor),
           Expanded(
             child: Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(24, 16, 24, 16),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top row: collection chip + bookmark
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: accentColor
-                              .withValues(alpha: 0.12),
-                          borderRadius:
-                              BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Text(
-                          collection.title.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                            color: accentColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.bookmark_border_rounded,
-                        size: 18,
-                        color: cs.onSurfaceVariant
-                            .withValues(alpha: 0.4),
-                      ),
-                    ],
-                  ),
-
                   // Title — centred vertically
                   Expanded(
                     child: Center(
@@ -832,18 +798,14 @@ class _FrontFace extends StatelessWidget {
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: accentColor
-                                .withValues(alpha: 0.1),
+                            color: accentColor.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                             border: Border.all(
-                                color: accentColor
-                                    .withValues(alpha: 0.3)),
+                                color:
+                                    accentColor.withValues(alpha: 0.3)),
                           ),
-                          child: Icon(
-                            Icons.visibility_rounded,
-                            size: 16,
-                            color: accentColor,
-                          ),
+                          child: Icon(Icons.visibility_rounded,
+                              size: 16, color: accentColor),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -870,16 +832,18 @@ class _FrontFace extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Back face
+// Back face — with outer scroll propagation
 // ─────────────────────────────────────────────
 class _BackFace extends StatelessWidget {
   final Flashcard card;
   final ColorScheme cs;
+  final ScrollController outerController;
 
   const _BackFace({
     super.key,
     required this.card,
     required this.cs,
+    required this.outerController,
   });
 
   @override
@@ -896,8 +860,7 @@ class _BackFace extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(
               children: [
                 Text(
@@ -928,48 +891,59 @@ class _BackFace extends StatelessWidget {
               thickness: 0.5,
               color: cs.primary.withValues(alpha: 0.2)),
           Expanded(
-            child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: card.content.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'No content yet.\nTap + Add Card to edit.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: cs.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                            fontStyle: FontStyle.italic,
+            child: NotificationListener<OverscrollNotification>(
+              onNotification: (notification) {
+                if (outerController.hasClients) {
+                  final newOffset = (outerController.offset +
+                          notification.overscroll)
+                      .clamp(0.0,
+                          outerController.position.maxScrollExtent);
+                  outerController.jumpTo(newOffset);
+                }
+                return true;
+              },
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                child: card.content.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'No content yet.\nTap + Add Card to edit.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: cs.onSurfaceVariant
+                                  .withValues(alpha: 0.5),
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ),
+                      )
+                    : MarkdownBody(
+                        data: card.content,
+                        styleSheet: MarkdownStyleSheet.fromTheme(
+                                Theme.of(context))
+                            .copyWith(
+                          p: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: cs.onSurface,
+                                height: 1.6,
+                              ),
+                          code: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                fontFamily: 'monospace',
+                                backgroundColor:
+                                    cs.surfaceContainer,
+                                color: cs.primary,
+                              ),
+                        ),
                       ),
-                    )
-                  : MarkdownBody(
-                      data: card.content,
-                      styleSheet:
-                          MarkdownStyleSheet.fromTheme(
-                                  Theme.of(context))
-                              .copyWith(
-                        p: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(
-                              color: cs.onSurface,
-                              height: 1.6,
-                            ),
-                        code: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              fontFamily: 'monospace',
-                              backgroundColor:
-                                  cs.surfaceContainer,
-                              color: cs.primary,
-                            ),
-                      ),
-                    ),
+              ),
             ),
           ),
         ],
@@ -979,159 +953,122 @@ class _BackFace extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// TABLE VIEW
+// TABLE VIEW — search, sort, row numbers, detail sheet
 // ─────────────────────────────────────────────
-class _TableView extends ConsumerWidget {
+class _TableView extends ConsumerStatefulWidget {
   final List<Flashcard> flashcards;
+  final FlashcardCollection collection;
   final String collectionId;
 
-  const _TableView(
-      {required this.flashcards, required this.collectionId});
+  const _TableView({
+    required this.flashcards,
+    required this.collection,
+    required this.collectionId,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final headerStyle = TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 0.5,
-      color: cs.onSurfaceVariant,
-    );
+  ConsumerState<_TableView> createState() => _TableViewState();
+}
 
-    if (flashcards.isEmpty) {
-      return SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg),
-          child: Container(
-            height: 120,
-            alignment: Alignment.center,
-            child: Text(
-              'No cards yet — tap Add Card to get started.',
-              style: TextStyle(
-                  color: cs.onSurfaceVariant, fontSize: 13),
-            ),
-          ),
-        ),
-      );
+class _TableViewState extends ConsumerState<_TableView> {
+  String? _sortColumn; // 'title' | 'created' | 'modified'
+  bool _sortAscending = true;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(
+        () => setState(() => _searchQuery = _searchController.text));
+  }
+
+  void _onColumnTap(String column) {
+    setState(() {
+      if (_sortColumn == column) {
+        if (_sortAscending) {
+          _sortAscending = false;
+        } else {
+          _sortColumn = null;
+          _sortAscending = true;
+        }
+      } else {
+        _sortColumn = column;
+        _sortAscending = true;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Flashcard> get _displayCards {
+    var list = _searchQuery.isEmpty
+        ? List<Flashcard>.from(widget.flashcards)
+        : widget.flashcards.where((c) {
+            final q = _searchQuery.toLowerCase();
+            return c.title.toLowerCase().contains(q) ||
+                c.content.toLowerCase().contains(q);
+          }).toList();
+    if (_sortColumn != null) {
+      list.sort((a, b) {
+        int cmp;
+        switch (_sortColumn) {
+          case 'title':
+            cmp = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          case 'created':
+            cmp = a.createdAt.compareTo(b.createdAt);
+          case 'modified':
+            cmp = a.updatedAt.compareTo(b.updatedAt);
+          default:
+            cmp = 0;
+        }
+        return _sortAscending ? cmp : -cmp;
+      });
     }
+    return list;
+  }
 
-    return SliverToBoxAdapter(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: cs.outline),
-              borderRadius:
-                  BorderRadius.circular(AppRadius.md),
-            ),
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                  cs.surfaceContainerHigh),
-              dataRowColor: WidgetStateProperty.all(
-                  cs.surfaceContainer),
-              columnSpacing: 20,
-              horizontalMargin: 16,
-              headingRowHeight: 44,
-              dataRowMinHeight: 52,
-              dataRowMaxHeight: 72,
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                    color: cs.outline, width: 0.5),
-              ),
-              columns: [
-                DataColumn(
-                    label: Text('TITLE', style: headerStyle)),
-                DataColumn(
-                    label:
-                        Text('CONTENT', style: headerStyle)),
-                DataColumn(
-                    label:
-                        Text('CREATED', style: headerStyle)),
-                DataColumn(
-                    label:
-                        Text('MODIFIED', style: headerStyle)),
-                DataColumn(
-                    label:
-                        Text('ACTIONS', style: headerStyle)),
-              ],
-              rows: flashcards.map((card) {
-                return DataRow(cells: [
-                  DataCell(SizedBox(
-                    width: 140,
-                    child: Text(
-                      card.title,
-                      style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface,
-                          fontSize: 13),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
-                  )),
-                  DataCell(SizedBox(
-                    width: 220,
-                    child: Text(
-                      card.content.isEmpty
-                          ? '—'
-                          : stripMarkdown(card.content),
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 2,
-                    ),
-                  )),
-                  DataCell(Text(formatDate(card.createdAt),
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant))),
-                  DataCell(Text(formatDate(card.updatedAt),
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant))),
-                  DataCell(Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () => context.push(
-                            '/collections/$collectionId/card/${card.id}'),
-                        icon: Icon(Icons.edit_outlined,
-                            size: 16, color: cs.primary),
-                        tooltip: 'Edit',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                            minWidth: 32, minHeight: 32),
-                      ),
-                      IconButton(
-                        onPressed: () =>
-                            _confirmDelete(context, ref, card),
-                        icon: Icon(
-                            Icons.delete_outline_rounded,
-                            size: 16,
-                            color: cs.error),
-                        tooltip: 'Delete',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                            minWidth: 32, minHeight: 32),
-                      ),
-                    ],
-                  )),
-                ]);
-              }).toList(),
-            ),
-          ),
+  void _showCardDetail(Flashcard card) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => UncontrolledProviderScope(
+        container: ProviderScope.containerOf(context),
+        child: _CardDetailSheet(
+          card: card,
+          collection: widget.collection,
+          onEdit: () {
+            Navigator.of(context, rootNavigator: true).pop();
+            context.push(
+                '/collections/${card.collectionId}/card/${card.id}');
+          },
+          onDeleteConfirm: () => _confirmDelete(context, ref, card),
         ),
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context,
-      WidgetRef ref, Flashcard card) async {
+  void _showCardOptions(Flashcard card) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => UncontrolledProviderScope(
+        container: ProviderScope.containerOf(context),
+        child: _CardOptionsSheet(card: card, cs: cs),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(
+      BuildContext context, WidgetRef ref, Flashcard card) async {
     final cs = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1142,8 +1079,8 @@ class _TableView extends ConsumerWidget {
         ),
         backgroundColor: cs.surfaceContainer,
         title: const Text('Delete Card?'),
-        content: Text(
-            '"${card.title}" will be permanently deleted.'),
+        content:
+            Text('"${card.title}" will be permanently deleted.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -1151,8 +1088,8 @@ class _TableView extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-                backgroundColor: cs.error),
+            style:
+                FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text('Delete'),
           ),
         ],
@@ -1161,5 +1098,495 @@ class _TableView extends ConsumerWidget {
     if (confirmed == true) {
       ref.read(flashcardsProvider.notifier).delete(card.id);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final display = _displayCards;
+    final accentColor = widget.collection.color;
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Row count ─────────────────────────────
+            RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurfaceVariant,
+                  letterSpacing: 0.5,
+                ),
+                children: [
+                  const TextSpan(text: 'SHOWING '),
+                  TextSpan(
+                      text: '${display.length}',
+                      style: TextStyle(color: accentColor)),
+                  const TextSpan(text: ' ROWS'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.sm),
+
+            // ── Search field ──────────────────────────
+            TextField(
+              controller: _searchController,
+              style: TextStyle(fontSize: 14, color: cs.onSurface),
+              decoration: InputDecoration(
+                hintText: 'Search cards...',
+                hintStyle: TextStyle(color: cs.onSurfaceVariant),
+                prefixIcon: Icon(Icons.search_rounded,
+                    size: 20, color: cs.onSurfaceVariant),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.close_rounded,
+                            size: 18, color: cs.onSurfaceVariant),
+                        onPressed: () => _searchController.clear(),
+                      )
+                    : null,
+                isDense: true,
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.md),
+
+            // ── Table ─────────────────────────────────
+            if (display.isEmpty)
+              Container(
+                height: 100,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainer,
+                  borderRadius:
+                      BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: cs.outline),
+                ),
+                child: Text(
+                  _searchQuery.isEmpty
+                      ? 'No cards yet.'
+                      : 'No cards match "$_searchQuery".',
+                  style: TextStyle(
+                      fontSize: 13, color: cs.onSurfaceVariant),
+                ),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(AppRadius.md),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: cs.outline),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Container(
+                          color: cs.surfaceContainerHigh,
+                          child: Row(
+                            children: [
+                              _TH(text: '#', width: 44, cs: cs),
+                              _SortableHeader(
+                                text: 'TITLE',
+                                width: 150,
+                                columnKey: 'title',
+                                sortColumn: _sortColumn,
+                                sortAscending: _sortAscending,
+                                onTap: _onColumnTap,
+                                cs: cs,
+                              ),
+                              _TH(
+                                  text: 'CONTENT',
+                                  width: 200,
+                                  cs: cs),
+                              _SortableHeader(
+                                text: 'CREATED',
+                                width: 100,
+                                columnKey: 'created',
+                                sortColumn: _sortColumn,
+                                sortAscending: _sortAscending,
+                                onTap: _onColumnTap,
+                                cs: cs,
+                              ),
+                              _SortableHeader(
+                                text: 'MODIFIED',
+                                width: 100,
+                                columnKey: 'modified',
+                                sortColumn: _sortColumn,
+                                sortAscending: _sortAscending,
+                                onTap: _onColumnTap,
+                                cs: cs,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                            height: 1,
+                            color: cs.outline
+                                .withValues(alpha: 0.5)),
+
+                        // Data rows
+                        ...display.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final card = entry.value;
+                          return _TableDataRow(
+                            index: idx + 1,
+                            card: card,
+                            cs: cs,
+                            isLast: idx == display.length - 1,
+                            onTap: () => _showCardDetail(card),
+                            onLongPress: () =>
+                                _showCardOptions(card),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Sortable column header cell
+// ─────────────────────────────────────────────
+class _SortableHeader extends StatelessWidget {
+  final String text;
+  final double width;
+  final String columnKey;
+  final String? sortColumn;
+  final bool sortAscending;
+  final void Function(String) onTap;
+  final ColorScheme cs;
+
+  const _SortableHeader({
+    required this.text,
+    required this.width,
+    required this.columnKey,
+    required this.sortColumn,
+    required this.sortAscending,
+    required this.onTap,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = sortColumn == columnKey;
+    return GestureDetector(
+      onTap: () => onTap(columnKey),
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+                color: isActive ? cs.primary : cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 3),
+            Icon(
+              isActive
+                  ? (sortAscending
+                      ? Icons.arrow_upward_rounded
+                      : Icons.arrow_downward_rounded)
+                  : Icons.unfold_more_rounded,
+              size: 12,
+              color: isActive
+                  ? cs.primary
+                  : cs.onSurfaceVariant.withValues(alpha: 0.35),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Table header cell
+// ─────────────────────────────────────────────
+class _TH extends StatelessWidget {
+  final String text;
+  final double width;
+  final ColorScheme cs;
+
+  const _TH({required this.text, required this.width, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 10),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            color: cs.onSurfaceVariant,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Table data row
+// ─────────────────────────────────────────────
+class _TableDataRow extends StatelessWidget {
+  final int index;
+  final Flashcard card;
+  final ColorScheme cs;
+  final bool isLast;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _TableDataRow({
+    required this.index,
+    required this.card,
+    required this.cs,
+    required this.isLast,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainer,
+          border: isLast
+              ? null
+              : Border(
+                  bottom: BorderSide(
+                      color: cs.outline.withValues(alpha: 0.5),
+                      width: 0.5)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 44,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 14),
+                child: Text(
+                  '$index',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          cs.onSurfaceVariant.withValues(alpha: 0.6)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 150,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                child: Text(
+                  card.title,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 200,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                child: Text(
+                  card.content.isEmpty
+                      ? '—'
+                      : stripMarkdown(card.content),
+                  style: TextStyle(
+                      fontSize: 12, color: cs.onSurfaceVariant),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 100,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                child: Text(
+                  formatDate(card.createdAt),
+                  style: TextStyle(
+                      fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 100,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                child: Text(
+                  formatDate(card.updatedAt),
+                  style: TextStyle(
+                      fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Card detail bottom sheet
+// ─────────────────────────────────────────────
+class _CardDetailSheet extends ConsumerWidget {
+  final Flashcard card;
+  final FlashcardCollection collection;
+  final VoidCallback onEdit;
+  final Future<void> Function() onDeleteConfirm;
+
+  const _CardDetailSheet({
+    required this.card,
+    required this.collection,
+    required this.onEdit,
+    required this.onDeleteConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
+    return AppBottomSheet(
+      title: card.title,
+      subtitle: 'Tap EDIT to modify · long press to manage',
+      leadingIcon: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: collection.color,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Icon(collection.iconData,
+            color: Colors.white, size: 20),
+      ),
+      actions: Row(
+        children: [
+          Expanded(
+            child: AppButton(
+              label: 'EDIT',
+              type: AppButtonType.outline,
+              icon: Icons.edit_outlined,
+              height: 48,
+              onPressed: onEdit,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: AppButton(
+              label: 'DELETE',
+              type: AppButtonType.danger,
+              icon: Icons.delete_outline_rounded,
+              height: 48,
+              onPressed: () async {
+                Navigator.of(context, rootNavigator: true).pop();
+                await onDeleteConfirm();
+              },
+            ),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ANSWER',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: cs.outline),
+            ),
+            child: card.content.isEmpty
+                ? Text(
+                    'No answer content yet.',
+                    style: TextStyle(
+                      color: cs.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                      fontSize: 13,
+                    ),
+                  )
+                : MarkdownBody(
+                    data: card.content,
+                    styleSheet:
+                        MarkdownStyleSheet.fromTheme(Theme.of(context))
+                            .copyWith(
+                      p: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(
+                            color: cs.onSurface,
+                            height: 1.6,
+                          ),
+                      code: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                            fontFamily: 'monospace',
+                            backgroundColor: cs.surfaceContainer,
+                            color: cs.primary,
+                          ),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -536,62 +536,62 @@ class _CardSection extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.xl),
 
-          // Deck tags — tags used in this collection
-          Text(
-            'DECK TAGS',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Consumer(
-            builder: (context, ref, _) {
-              final allTags = ref.watch(tagsProvider);
-              final usedTagIds =
-                  flashcards.expand((c) => c.tagIds).toSet();
-              final usedTags = allTags
-                  .where((t) => usedTagIds.contains(t.id))
-                  .toList();
-              if (usedTags.isEmpty) {
-                return Text(
-                  'No tags assigned yet.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: cs.onSurfaceVariant
-                        .withValues(alpha: 0.55),
-                    fontStyle: FontStyle.italic,
-                  ),
-                );
-              }
-              return Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: usedTags
-                    .map((tag) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHigh,
-                            borderRadius: BorderRadius.circular(
-                                AppRadius.full),
-                            border: Border.all(color: cs.outline),
-                          ),
-                          child: Text(
-                            '#${tag.name}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              );
-            },
-          ),
+          // // Deck tags — tags used in this collection
+          // Text(
+          //   'DECK TAGS',
+          //   style: TextStyle(
+          //     fontSize: 10,
+          //     fontWeight: FontWeight.w700,
+          //     letterSpacing: 0.8,
+          //     color: cs.onSurfaceVariant,
+          //   ),
+          // ),
+          // const SizedBox(height: AppSpacing.sm),
+          // Consumer(
+          //   builder: (context, ref, _) {
+          //     final allTags = ref.watch(tagsProvider);
+          //     final usedTagIds =
+          //         flashcards.expand((c) => c.tagIds).toSet();
+          //     final usedTags = allTags
+          //         .where((t) => usedTagIds.contains(t.id))
+          //         .toList();
+          //     if (usedTags.isEmpty) {
+          //       return Text(
+          //         'No tags assigned yet.',
+          //         style: TextStyle(
+          //           fontSize: 12,
+          //           color: cs.onSurfaceVariant
+          //               .withValues(alpha: 0.55),
+          //           fontStyle: FontStyle.italic,
+          //         ),
+          //       );
+          //     }
+          //     return Wrap(
+          //       spacing: 6,
+          //       runSpacing: 4,
+          //       children: usedTags
+          //           .map((tag) => Container(
+          //                 padding: const EdgeInsets.symmetric(
+          //                     horizontal: 8, vertical: 3),
+          //                 decoration: BoxDecoration(
+          //                   color: cs.surfaceContainerHigh,
+          //                   borderRadius: BorderRadius.circular(
+          //                       AppRadius.full),
+          //                   border: Border.all(color: cs.outline),
+          //                 ),
+          //                 child: Text(
+          //                   '#${tag.name}',
+          //                   style: TextStyle(
+          //                     fontSize: 11,
+          //                     fontWeight: FontWeight.w600,
+          //                     color: cs.onSurfaceVariant,
+          //                   ),
+          //                 ),
+          //               ))
+          //           .toList(),
+          //     );
+          //   },
+          // ),
           const SizedBox(height: AppSpacing.lg),
         ],
       ),

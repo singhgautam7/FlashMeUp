@@ -25,8 +25,8 @@ class FlashcardCollection {
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  IconData get iconData =>
-      IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+
+  IconData get iconData => getCollectionIconData(iconCodePoint);
   Color get color => Color(colorValue);
 
   FlashcardCollection copyWith({
@@ -71,4 +71,54 @@ class FlashcardCollection {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
+}
+
+const List<IconData> kCollectionIcons = [
+  Icons.auto_stories_rounded,
+  Icons.library_books_rounded,
+  Icons.school_rounded,
+  Icons.psychology_rounded,
+  Icons.science_rounded,
+  Icons.biotech_rounded,
+  Icons.calculate_rounded,
+  Icons.functions_rounded,
+  Icons.language_rounded,
+  Icons.translate_rounded,
+  Icons.spellcheck_rounded,
+  Icons.history_edu_rounded,
+  Icons.public_rounded,
+  Icons.map_rounded,
+  Icons.palette_rounded,
+  Icons.music_note_rounded,
+  Icons.theater_comedy_rounded,
+  Icons.brush_rounded,
+  Icons.camera_alt_rounded,
+  Icons.computer_rounded,
+  Icons.code_rounded,
+  Icons.memory_rounded,
+  Icons.developer_mode_rounded,
+  Icons.fitness_center_rounded,
+  Icons.restaurant_rounded,
+  Icons.travel_explore_rounded,
+  Icons.sports_soccer_rounded,
+  Icons.local_hospital_rounded,
+  Icons.medical_services_rounded,
+  Icons.eco_rounded,
+  Icons.business_rounded,
+  Icons.account_balance_rounded,
+  Icons.gavel_rounded,
+  Icons.lightbulb_rounded,
+  Icons.bolt_rounded,
+  Icons.star_rounded,
+  Icons.favorite_rounded,
+  Icons.emoji_events_rounded,
+  Icons.rocket_launch_rounded,
+  Icons.book_rounded,
+];
+
+IconData getCollectionIconData(int codePoint) {
+  for (final icon in kCollectionIcons) {
+    if (icon.codePoint == codePoint) return icon;
+  }
+  return Icons.auto_stories_rounded; // fallback
 }

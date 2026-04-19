@@ -26,49 +26,6 @@ const List<Color> _kColors = [
   Color(0xFF64748B), // Slate
 ];
 
-const List<IconData> _kIcons = [
-  Icons.auto_stories_rounded,
-  Icons.library_books_rounded,
-  Icons.school_rounded,
-  Icons.psychology_rounded,
-  Icons.science_rounded,
-  Icons.biotech_rounded,
-  Icons.calculate_rounded,
-  Icons.functions_rounded,
-  Icons.language_rounded,
-  Icons.translate_rounded,
-  Icons.spellcheck_rounded,
-  Icons.history_edu_rounded,
-  Icons.public_rounded,
-  Icons.map_rounded,
-  Icons.palette_rounded,
-  Icons.music_note_rounded,
-  Icons.theater_comedy_rounded,
-  Icons.brush_rounded,
-  Icons.camera_alt_rounded,
-  Icons.computer_rounded,
-  Icons.code_rounded,
-  Icons.memory_rounded,
-  Icons.developer_mode_rounded,
-  Icons.fitness_center_rounded,
-  Icons.restaurant_rounded,
-  Icons.travel_explore_rounded,
-  Icons.sports_soccer_rounded,
-  Icons.local_hospital_rounded,
-  Icons.medical_services_rounded,
-  Icons.eco_rounded,
-  Icons.business_rounded,
-  Icons.account_balance_rounded,
-  Icons.gavel_rounded,
-  Icons.lightbulb_rounded,
-  Icons.bolt_rounded,
-  Icons.star_rounded,
-  Icons.favorite_rounded,
-  Icons.emoji_events_rounded,
-  Icons.rocket_launch_rounded,
-  Icons.book_rounded,
-];
-
 class AddEditCollectionScreen extends ConsumerStatefulWidget {
   final String? collectionId; // null = add mode
 
@@ -111,7 +68,7 @@ class _AddEditCollectionScreenState
     _selectedColorValue =
         ex?.colorValue ?? _kColors[0].toARGB32();
     _selectedIconCodePoint =
-        ex?.iconCodePoint ?? _kIcons[0].codePoint;
+        ex?.iconCodePoint ?? kCollectionIcons[0].codePoint;
 
     _nameController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback(
@@ -243,8 +200,7 @@ class _AddEditCollectionScreenState
                                   BorderRadius.circular(AppRadius.md),
                             ),
                             child: Icon(
-                              IconData(_selectedIconCodePoint,
-                                  fontFamily: 'MaterialIcons'),
+                              getCollectionIconData(_selectedIconCodePoint),
                               color: Colors.white,
                               size: 24,
                             ),
@@ -422,9 +378,9 @@ class _AddEditCollectionScreenState
                             crossAxisSpacing: 8,
                             childAspectRatio: 1,
                           ),
-                          itemCount: _kIcons.length,
+                          itemCount: kCollectionIcons.length,
                           itemBuilder: (ctx, index) {
-                            final icon = _kIcons[index];
+                            final icon = kCollectionIcons[index];
                             final selected = icon.codePoint ==
                                 _selectedIconCodePoint;
                             return GestureDetector(

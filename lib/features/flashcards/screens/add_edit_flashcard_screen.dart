@@ -164,10 +164,7 @@ class _AddEditFlashcardScreenState
                 children: [
                   PageHeader(
                     title: collection?.title ?? 'New Card',
-                    icon: collection != null
-                        ? IconData(collection.iconCodePoint,
-                            fontFamily: 'MaterialIcons')
-                        : null,
+                    icon: collection?.iconData,
                     iconColor: collection?.color,
                   ),
 

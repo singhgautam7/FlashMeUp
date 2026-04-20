@@ -1,17 +1,20 @@
-# flashmeup
+# FlashMeUp ⚡📚
 
-A new Flutter project.
+**The lightning-fast, privacy-first offline flashcard companion.**
 
-## Getting Started
+FlashMeUp is a beautifully crafted, local-first flashcard application designed to make studying and memorization as seamless and distracted-free as possible. Built on Flutter, it offers a premium, ad-free experience engineered entirely around speed, privacy, and functionality.
 
-This project is a starting point for a Flutter application.
+## 🚀 Key Features
 
-A few resources to get you started if this is your first Flutter project:
+*   **Offline-First & Fully Private:** No forced accounts, no cloud sync, and zero tracking. All your flashcard data is securely stored directly on your device using a local database format. 
+*   **Rich Text Markdown:** Take your notes further. Format your flashcard answers using full Markdown support (bolding, italics, code-blocks, lists, and more).
+*   **Intuitive Organization:** Neatly group your learning materials into customizable **Collections**, color-code them, and leverage global **Tags** to slice and filter cards across multiple decks easily.
+*   **Frictionless UX:** Study by swiping through a clean horizontal `PageView` with smooth, instant card-flipping animations natively powered by Flutter mechanics. 
+*   **Import/Export Anytime:** Full control over your data. Easily export your entire library or import external datasets locally.
+*   **Premium Aesthetics:** A carefully curated, flat-design UI avoiding clutter, heavy shadows, and distractions. Focused purely on your learning workflow. 
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## 🛡️ Privacy Policy summary
+FlashMeUp collects absolutely no personal or analytical data. Everything stays on-device indefinitely. Review the complete [Privacy Policy](PRIVACY_POLICY.md) for full transparency. 
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+_Crafted locally. Study privately._

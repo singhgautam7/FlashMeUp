@@ -1,16 +1,16 @@
-﻿# Privacy Policy
+# Privacy Policy
 
 **Last updated:** 28th March 2026
 
 ## Introduction
 
-Kubera ("we", "our", or "the app") respects your privacy. This Privacy Policy explains how your information is handled when you use the app.
+FlashMeUp ("we", "our", or "the app") respects your privacy. This Privacy Policy explains how your information is handled when you use the app.
 
 ---
 
 ## Information We Collect
 
-Kubera is designed as a **local-first application**.
+FlashMeUp is designed as a **local-first application**.
 
 ### We DO NOT collect or store:
 - Personal information (name, email, phone number)
@@ -30,16 +30,16 @@ We do **not** transmit or store your data on any remote servers.
 
 ## Biometrics
 
-Kubera may use biometric authentication (such as fingerprint or face unlock) to secure access to the app.
+FlashMeUp may use biometric authentication (such as fingerprint or face unlock) to secure access to the app.
 
 - Biometric data is handled entirely by your device’s operating system.
-- Kubera does **not** access, store, or share your biometric data.
+- FlashMeUp does **not** access, store, or share your biometric data.
 
 ---
 
 ## Internet Usage
 
-Kubera may use internet access for:
+FlashMeUp may use internet access for:
 - App updates
 - Future features (if introduced)
 
@@ -49,7 +49,7 @@ Currently, no personal or financial data is transmitted over the internet.
 
 ## Third-Party Services
 
-Kubera does not use third-party services that collect personal data.
+FlashMeUp does not use third-party services that collect personal data.
 
 (If you add Firebase/analytics later, this section must be updated.)
 
